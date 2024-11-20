@@ -66,7 +66,6 @@ function Flipbook() {
   const containerRef = useRef(null);
   const loadedImages = useRef({});
 
-  // Preload images and cache loaded states
   useEffect(() => {
     const preloadImage = async () => {
       const currentCID = photos[currentIndex].cid;
@@ -77,7 +76,7 @@ function Flipbook() {
           setIsLoading(false);
           loadedImages.current[currentCID] = true;
         };
-        img.onerror = () => setIsLoading(false); // Gracefully handle image errors
+        img.onerror = () => setIsLoading(false);
       } else {
         setIsLoading(false);
       }
@@ -131,31 +130,33 @@ function Flipbook() {
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col h-screen bg-gray-100 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
+      className={`flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300 ${
+        isFullscreen ? 'fixed inset-0 z-50' : ''
+      }`}
       {...handlers}
     >
-      {/* Header with accessibility improvements and gateway selection */}
-      <header className="bg-white shadow-md p-4 flex justify-between items-center">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
         <h1 className="text-3xl font-bold">And The World Came Outside</h1>
         <div className="space-x-2 flex items-center">
           <button
             aria-label="Zoom Out"
             onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))}
-            className="px-2 py-1 bg-gray-200 rounded"
+            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
           >
             -
           </button>
           <button
             aria-label="Zoom In"
             onClick={() => setScale((prev) => Math.min(prev + 0.1, 3))}
-            className="px-2 py-1 bg-gray-200 rounded"
+            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
           >
             +
           </button>
           <button
             aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
             onClick={toggleFullscreen}
-            className="px-2 py-1 bg-gray-200 rounded"
+            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
           >
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
@@ -163,7 +164,7 @@ function Flipbook() {
             aria-label="Select IPFS Gateway"
             value={selectedGateway}
             onChange={(e) => setSelectedGateway(e.target.value)}
-            className="px-2 py-1 bg-gray-200 rounded"
+            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
           >
             {IPFS_GATEWAYS.map((gateway, index) => (
               <option key={index} value={gateway}>
@@ -174,37 +175,38 @@ function Flipbook() {
         </div>
       </header>
 
-      {/* Main Image Viewer */}
+      {/* Main Viewer */}
       <main className="flex-grow flex items-center justify-center p-4 relative">
-        <div className="relative w-full max-w-4xl aspect-[3/2] bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="relative w-full max-w-4xl aspect-[3/2] bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
-              <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900"></div>
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
+              <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900 dark:border-gray-400"></div>
             </div>
           )}
           <img
             src={`${selectedGateway}${photos[currentIndex].cid}`}
             alt={photos[currentIndex].name}
-            onError={() => setIsLoading(false)}
-            className={`w-full h-full object-contain transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+            className={`w-full h-full object-contain transition-opacity duration-300 ${
+              isLoading ? 'opacity-0' : 'opacity-100'
+            }`}
             style={{ transform: `scale(${scale})` }}
           />
           <button
             aria-label="Previous Image"
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-2 rounded-full"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 dark:bg-opacity-75 hover:bg-opacity-75 dark:hover:bg-opacity-50 text-white p-2 rounded-full"
             onClick={goToPrevious}
           >
             &#8592;
           </button>
           <button
             aria-label="Next Image"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-2 rounded-full"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 dark:bg-opacity-75 hover:bg-opacity-75 dark:hover:bg-opacity-50 text-white p-2 rounded-full"
             onClick={goToNext}
           >
             &#8594;
           </button>
           {showInfo && (
-            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2">
+            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 dark:bg-gray-800 text-white dark:text-gray-400 p-2">
               <p>{photos[currentIndex].name}</p>
               <p>Size: {(photos[currentIndex].size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
@@ -212,8 +214,8 @@ function Flipbook() {
         </div>
       </main>
 
-      {/* Thumbnails */}
-      <footer className="bg-white shadow-md p-4">
+      {/* Footer with Thumbnails */}
+      <footer className="bg-white dark:bg-gray-800 shadow-md p-4">
         <div className="overflow-x-auto">
           <div className="flex space-x-2 pb-2">
             {photos.map((photo, index) => (
