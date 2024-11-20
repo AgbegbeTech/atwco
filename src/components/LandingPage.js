@@ -7,6 +7,8 @@ const IPFS_GATEWAYS = [
   { name: "Cloudflare Gateway", url: "https://cloudflare-ipfs.com/ipfs/" },
 ];
 
+const IMAGE_CID = "QmcbUjshj7RoHHLTXFMASwUTjHsKCTEVWVr4uHFLx4Du56"; // Replace with your image CID
+
 function LandingPage() {
   const [selectedGateway, setSelectedGateway] = useState(IPFS_GATEWAYS[0].url);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,6 +79,11 @@ function LandingPage() {
           New York. This collection of images aims to show a different side of
           humanity through the lens of empathy and compassion.
         </p>
+        <img
+          src={`${selectedGateway}${IMAGE_CID}`}
+          alt="And The World Came Outside"
+          className="rounded shadow-lg max-w-full max-h-96 mb-8"
+        />
         <p className="text-gray-600 dark:text-gray-400 mb-4 text-center">
           Explore the interactive digital version or purchase the full photobook
           to own a piece of this journey.
