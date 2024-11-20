@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSwipeable } from 'react-swipeable';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const photos = [
   { name: "ATWCO_001.jpg", cid: "QmcbUjshj7RoHHLTXFMASwUTjHsKCTEVWVr4uHFLx4Du56", size: 2070796 },
@@ -66,6 +66,7 @@ function Flipbook() {
   const [showInfo, setShowInfo] = useState(false);
   const [scale, setScale] = useState(1);
   const [selectedGateway, setSelectedGateway] = useState(initialGateway);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const containerRef = useRef(null);
   const loadedImages = useRef({});
@@ -129,37 +130,61 @@ function Flipbook() {
       className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300"
       {...handlers}
     >
+      {/* Menu */}
+      <div
+        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transition-transform ${
+          menuOpen ? 'translate-x-0' : '-translate-x-64'
+        }`}
+      >
+        <div className="p-4">
+          <h2 className="text-lg font-bold mb-4">Menu</h2>
+          <ul>
+            <li className="mb-2">
+              <Link
+                to="/"
+                className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
+              >
+                Back to Landing Page
+              </Link>
+            </li>
+            <li className="mb-2">
+              <button
+                onClick={() => setScale(1)}
+                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              >
+                Reset Zoom
+              </button>
+            </li>
+            <li className="mb-2">
+              <label htmlFor="gateway-select" className="block text-gray-700 dark:text-gray-300">
+                Change Gateway:
+              </label>
+              <select
+                id="gateway-select"
+                value={selectedGateway}
+                onChange={(e) => setSelectedGateway(e.target.value)}
+                className="w-full px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
+              >
+                {IPFS_GATEWAYS.map((gateway, index) => (
+                  <option key={index} value={gateway.url}>
+                    {gateway.name}
+                  </option>
+                ))}
+              </select>
+            </li>
+          </ul>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
+        <button
+          className="text-gray-700 dark:text-gray-300"
+          onClick={() => setMenuOpen((prev) => !prev)}
+        >
+          ☰
+        </button>
         <h1 className="text-3xl font-bold">And The World Came Outside</h1>
-        <div className="space-x-2 flex items-center">
-          <button
-            aria-label="Zoom Out"
-            onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))}
-            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
-          >
-            -
-          </button>
-          <button
-            aria-label="Zoom In"
-            onClick={() => setScale((prev) => Math.min(prev + 0.1, 3))}
-            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
-          >
-            +
-          </button>
-          <select
-            aria-label="Select IPFS Gateway"
-            value={selectedGateway}
-            onChange={(e) => setSelectedGateway(e.target.value)}
-            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
-          >
-            {IPFS_GATEWAYS.map((gateway, index) => (
-              <option key={index} value={gateway.url}>
-                {gateway.name}
-              </option>
-            ))}
-          </select>
-        </div>
       </header>
 
       {/* Main Viewer */}
@@ -200,35 +225,6 @@ function Flipbook() {
           )}
         </div>
       </main>
-
-      {/* Footer with Thumbnails */}
-      <footer className="bg-white dark:bg-gray-800 shadow-md p-4">
-        <div className="overflow-x-auto">
-          <div className="flex space-x-2 pb-2">
-            {photos.map((photo, index) => (
-              <button
-                key={photo.cid}
-                aria-label={`Go to ${photo.name}`}
-                onClick={() => {
-                  setCurrentIndex(index);
-                  setIsLoading(true);
-                  setScale(1);
-                }}
-                className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  index === currentIndex ? 'ring-2 ring-blue-500' : ''
-                }`}
-              >
-                <img
-                  loading="lazy"
-                  src={`${selectedGateway}${photo.cid}`}
-                  alt={photo.name}
-                  className="w-full h-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
