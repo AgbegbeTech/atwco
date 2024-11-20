@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSwipeable } from 'react-swipeable';
+import { useLocation } from 'react-router-dom';
 
 const photos = [
   { name: "ATWCO_001.jpg", cid: "QmcbUjshj7RoHHLTXFMASwUTjHsKCTEVWVr4uHFLx4Du56", size: 2070796 },
@@ -51,18 +52,21 @@ const photos = [
 ];
 
 const IPFS_GATEWAYS = [
-  'https://ipfs.io/ipfs/',
-  'https://dweb.link/ipfs/',
-  'https://cloudflare-ipfs.com/ipfs/'
+  { name: 'IPFS.io Gateway', url: 'https://ipfs.io/ipfs/' },
+  { name: 'Dweb.link Gateway', url: 'https://dweb.link/ipfs/' },
+  { name: 'Cloudflare Gateway', url: 'https://cloudflare-ipfs.com/ipfs/' },
 ];
 
 function Flipbook() {
+  const location = useLocation();
+  const initialGateway = location.state?.selectedGateway || IPFS_GATEWAYS[0].url;
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [scale, setScale] = useState(1);
-  const [selectedGateway, setSelectedGateway] = useState(IPFS_GATEWAYS[0]);
+  const [selectedGateway, setSelectedGateway] = useState(initialGateway);
+
   const containerRef = useRef(null);
   const loadedImages = useRef({});
 
@@ -96,24 +100,16 @@ function Flipbook() {
     setScale(1);
   }, []);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
-
-  const handleKeyDown = useCallback((event) => {
-    if (event.key === 'ArrowLeft') goToPrevious();
-    if (event.key === 'ArrowRight') goToNext();
-    if (event.key === 'f') toggleFullscreen();
-    if (event.key === 'i') setShowInfo((prev) => !prev);
-    if (event.key === '+') setScale((prev) => Math.min(prev + 0.1, 3));
-    if (event.key === '-') setScale((prev) => Math.max(prev - 0.1, 0.5));
-  }, [goToPrevious, goToNext]);
+  const handleKeyDown = useCallback(
+    (event) => {
+      if (event.key === 'ArrowLeft') goToPrevious();
+      if (event.key === 'ArrowRight') goToNext();
+      if (event.key === 'i') setShowInfo((prev) => !prev);
+      if (event.key === '+') setScale((prev) => Math.min(prev + 0.1, 3));
+      if (event.key === '-') setScale((prev) => Math.max(prev - 0.1, 0.5));
+    },
+    [goToPrevious, goToNext]
+  );
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -124,15 +120,13 @@ function Flipbook() {
     onSwipedLeft: goToNext,
     onSwipedRight: goToPrevious,
     preventDefaultTouchmoveEvent: true,
-    trackMouse: true
+    trackMouse: true,
   });
 
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300 ${
-        isFullscreen ? 'fixed inset-0 z-50' : ''
-      }`}
+      className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300"
       {...handlers}
     >
       {/* Header */}
@@ -153,13 +147,6 @@ function Flipbook() {
           >
             +
           </button>
-          <button
-            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            onClick={toggleFullscreen}
-            className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
-          >
-            {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-          </button>
           <select
             aria-label="Select IPFS Gateway"
             value={selectedGateway}
@@ -167,8 +154,8 @@ function Flipbook() {
             className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded"
           >
             {IPFS_GATEWAYS.map((gateway, index) => (
-              <option key={index} value={gateway}>
-                Gateway {index + 1}
+              <option key={index} value={gateway.url}>
+                {gateway.name}
               </option>
             ))}
           </select>
