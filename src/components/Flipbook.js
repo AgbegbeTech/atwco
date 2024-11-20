@@ -50,22 +50,40 @@ const photos = [
   { name: "ATWCO_046.jpg", cid: "QmSDL1RMjAbvUbyJzqapQjMbzt1aFnGbquaaFMA3h16MGa", size: 8642518 }
 ];
 
+const IPFS_GATEWAYS = [
+  'https://ipfs.io/ipfs/',
+  'https://dweb.link/ipfs/',
+  'https://cloudflare-ipfs.com/ipfs/'
+];
+
 function Flipbook() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [scale, setScale] = useState(1);
+  const [selectedGateway, setSelectedGateway] = useState(IPFS_GATEWAYS[0]);
   const containerRef = useRef(null);
+  const loadedImages = useRef({});
 
+  // Preload images and cache loaded states
   useEffect(() => {
-    const img = new Image();
-    img.src = `https://ipfs.io/ipfs/${photos[currentIndex].cid}`;
-    img.onload = () => setIsLoading(false);
-    return () => {
-      img.onload = null;
+    const preloadImage = async () => {
+      const currentCID = photos[currentIndex].cid;
+      if (!loadedImages.current[currentCID]) {
+        const img = new Image();
+        img.src = `${selectedGateway}${currentCID}`;
+        img.onload = () => {
+          setIsLoading(false);
+          loadedImages.current[currentCID] = true;
+        };
+        img.onerror = () => setIsLoading(false); // Gracefully handle image errors
+      } else {
+        setIsLoading(false);
+      }
     };
-  }, [currentIndex]);
+    preloadImage();
+  }, [currentIndex, selectedGateway]);
 
   const goToPrevious = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex > 0 ? prevIndex - 1 : photos.length - 1));
@@ -111,22 +129,52 @@ function Flipbook() {
   });
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={`flex flex-col h-screen bg-gray-100 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
       {...handlers}
     >
+      {/* Header with accessibility improvements and gateway selection */}
       <header className="bg-white shadow-md p-4 flex justify-between items-center">
         <h1 className="text-3xl font-bold">And The World Came Outside</h1>
-        <div className="space-x-2">
-          <button onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))} className="px-2 py-1 bg-gray-200 rounded">-</button>
-          <button onClick={() => setScale((prev) => Math.min(prev + 0.1, 3))} className="px-2 py-1 bg-gray-200 rounded">+</button>
-          <button onClick={toggleFullscreen} className="px-2 py-1 bg-gray-200 rounded">
+        <div className="space-x-2 flex items-center">
+          <button
+            aria-label="Zoom Out"
+            onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))}
+            className="px-2 py-1 bg-gray-200 rounded"
+          >
+            -
+          </button>
+          <button
+            aria-label="Zoom In"
+            onClick={() => setScale((prev) => Math.min(prev + 0.1, 3))}
+            className="px-2 py-1 bg-gray-200 rounded"
+          >
+            +
+          </button>
+          <button
+            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+            onClick={toggleFullscreen}
+            className="px-2 py-1 bg-gray-200 rounded"
+          >
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
+          <select
+            aria-label="Select IPFS Gateway"
+            value={selectedGateway}
+            onChange={(e) => setSelectedGateway(e.target.value)}
+            className="px-2 py-1 bg-gray-200 rounded"
+          >
+            {IPFS_GATEWAYS.map((gateway, index) => (
+              <option key={index} value={gateway}>
+                Gateway {index + 1}
+              </option>
+            ))}
+          </select>
         </div>
       </header>
 
+      {/* Main Image Viewer */}
       <main className="flex-grow flex items-center justify-center p-4 relative">
         <div className="relative w-full max-w-4xl aspect-[3/2] bg-white shadow-lg rounded-lg overflow-hidden">
           {isLoading && (
@@ -135,24 +183,25 @@ function Flipbook() {
             </div>
           )}
           <img
-            src={`https://ipfs.io/ipfs/${photos[currentIndex].cid}`}
+            src={`${selectedGateway}${photos[currentIndex].cid}`}
             alt={photos[currentIndex].name}
+            onError={() => setIsLoading(false)}
             className={`w-full h-full object-contain transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
             style={{ transform: `scale(${scale})` }}
           />
-          <button 
+          <button
+            aria-label="Previous Image"
             className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-2 rounded-full"
             onClick={goToPrevious}
           >
             &#8592;
-            <span className="sr-only">Previous image</span>
           </button>
-          <button 
+          <button
+            aria-label="Next Image"
             className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-2 rounded-full"
             onClick={goToNext}
           >
             &#8594;
-            <span className="sr-only">Next image</span>
           </button>
           {showInfo && (
             <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-2">
@@ -163,12 +212,14 @@ function Flipbook() {
         </div>
       </main>
 
+      {/* Thumbnails */}
       <footer className="bg-white shadow-md p-4">
         <div className="overflow-x-auto">
           <div className="flex space-x-2 pb-2">
             {photos.map((photo, index) => (
               <button
                 key={photo.cid}
+                aria-label={`Go to ${photo.name}`}
                 onClick={() => {
                   setCurrentIndex(index);
                   setIsLoading(true);
@@ -179,7 +230,8 @@ function Flipbook() {
                 }`}
               >
                 <img
-                  src={`https://ipfs.io/ipfs/${photo.cid}`}
+                  loading="lazy"
+                  src={`${selectedGateway}${photo.cid}`}
                   alt={photo.name}
                   className="w-full h-full object-cover"
                 />
