@@ -241,7 +241,7 @@ const IPFS_GATEWAYS = [
   { name: "Cloudflare Gateway", url: "https://cloudflare-ipfs.com/ipfs/" },
 ];
 
-function Flipbook() {
+const Flipbook = () => {
   const location = useLocation();
   const initialGateway =
     location.state?.selectedGateway || IPFS_GATEWAYS[0].url;
@@ -249,11 +249,35 @@ function Flipbook() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [scale, setScale] = useState(1);
-  const [selectedGateway] = useState(initialGateway); // Removed setSelectedGateway
+  const [selectedGateway] = useState(initialGateway);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(
+    () => localStorage.getItem("theme") === "dark"
+  );
 
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
   const loadedImages = useRef({});
+
+  const toggleMenu = () => setMenuOpen((prev) => !prev);
+
+  const toggleDarkMode = () => {
+    setDarkMode((prev) => {
+      const newMode = !prev;
+      localStorage.setItem("theme", newMode ? "dark" : "light");
+      return newMode;
+    });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const preloadImage = () => {
@@ -314,12 +338,17 @@ function Flipbook() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300"
+      className={`relative flex flex-col h-screen ${
+        darkMode ? "bg-gray-900 text-gray-200" : "bg-gray-100 text-gray-800"
+      } transition-colors duration-300`}
       {...handlers}
     >
       {/* Menu */}
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transition-transform ${
+        ref={menuRef}
+        className={`fixed top-0 left-0 h-full w-64 ${
+          darkMode ? "bg-black" : "bg-white"
+        } shadow-lg transition-transform ${
           menuOpen ? "translate-x-0" : "-translate-x-64"
         }`}
       >
@@ -329,7 +358,9 @@ function Flipbook() {
             <li className="mb-2">
               <Link
                 to="/"
-                className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
+                className={`${
+                  darkMode ? "text-blue-400" : "text-blue-500"
+                } hover:text-blue-600 transition`}
               >
                 Back to Landing Page
               </Link>
@@ -339,42 +370,51 @@ function Flipbook() {
       </div>
 
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
+      <header
+        className={`absolute top-0 left-0 w-full ${
+          darkMode ? "bg-black" : "bg-white"
+        } bg-opacity-80 p-4 flex justify-between items-center z-10`}
+      >
         <button
-          className="text-gray-700 dark:text-gray-300"
-          onClick={() => setMenuOpen((prev) => !prev)}
+          className={`${
+            darkMode ? "text-gray-200" : "text-gray-800"
+          } hover:text-gray-400 transition`}
+          onClick={toggleMenu}
+          aria-label="Toggle Menu"
         >
           ☰
         </button>
-        <h1 className="text-3xl font-bold">And The World Came Outside</h1>
+        <h1 className="text-2xl font-bold tracking-wider">
+          And The World Came Outside
+        </h1>
       </header>
 
       {/* Main Viewer */}
-      <main className="flex-grow flex items-center justify-center p-4 relative">
-        <div className="relative w-full max-w-4xl aspect-[3/2] bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden">
+      <main className="flex-grow flex items-center justify-center p-4 relative z-0">
+        <div className="relative w-full max-w-5xl aspect-[3/2] shadow-lg rounded-lg overflow-hidden">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-              <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-gray-900 dark:border-gray-400"></div>
+            <div className="absolute inset-0 flex items-center justify-center bg-opacity-80 bg-black">
+              <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-blue-400"></div>
             </div>
           )}
           <img
             src={`${selectedGateway}${photos[currentIndex].cid}`}
             alt={photos[currentIndex].name}
-            className={`w-full h-full object-contain transition-opacity duration-300 ${
+            className={`w-full h-full object-contain transition-opacity duration-500 ${
               isLoading ? "opacity-0" : "opacity-100"
             }`}
             style={{ transform: `scale(${scale})` }}
           />
           <button
             aria-label="Previous Image"
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 dark:bg-opacity-75 hover:bg-opacity-75 dark:hover:bg-opacity-50 text-white p-2 rounded-full"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition"
             onClick={goToPrevious}
           >
             &#8592;
           </button>
           <button
             aria-label="Next Image"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 dark:bg-opacity-75 hover:bg-opacity-75 dark:hover:bg-opacity-50 text-white p-2 rounded-full"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition"
             onClick={goToNext}
           >
             &#8594;
@@ -382,9 +422,9 @@ function Flipbook() {
         </div>
       </main>
 
-      {/* Thumbnails */}
-      <footer className="bg-white dark:bg-gray-800 shadow-md p-4 overflow-x-auto">
-        <div className="flex space-x-2">
+      {/* Footer */}
+      <footer className={`p-4 ${darkMode ? "bg-black" : "bg-white"} shadow-md`}>
+        <div className="flex items-center justify-center space-x-4 overflow-x-auto">
           {photos.map((photo, index) => (
             <button
               key={photo.cid}
@@ -394,22 +434,33 @@ function Flipbook() {
                 setIsLoading(true);
                 setScale(1);
               }}
-              className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden focus:outline-none ${
-                index === currentIndex ? "ring-2 ring-blue-500" : ""
+              className={`flex-shrink-0 w-24 h-24 rounded-md overflow-hidden ${
+                index === currentIndex ? "ring-2 ring-blue-400" : ""
               }`}
             >
               <img
                 loading="lazy"
                 src={`${selectedGateway}${photo.cid}`}
                 alt={photo.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover transform transition-transform duration-300 hover:scale-110 hover:shadow-lg"
               />
             </button>
           ))}
         </div>
+        {/* Dark Mode Button */}
+        <div className="mt-4 flex justify-center">
+          <button
+            onClick={toggleDarkMode}
+            className={`${
+              darkMode ? "bg-yellow-500" : "bg-gray-800"
+            } text-white px-4 py-2 rounded hover:opacity-80 transition`}
+          >
+            {darkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+        </div>
       </footer>
     </div>
   );
-}
+};
 
 export default Flipbook;
