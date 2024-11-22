@@ -242,44 +242,32 @@ const IPFS_GATEWAYS = [
 ];
 
 const Flipbook = () => {
-  const location = useLocation();
-  const initialGateway =
-    location.state?.selectedGateway || IPFS_GATEWAYS[0].url;
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [scale, setScale] = useState(1);
-  const [selectedGateway] = useState(initialGateway);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(
-    () => localStorage.getItem("theme") === "dark"
-  );
+  const [selectedGateway] = useState(IPFS_GATEWAYS[0].url);
 
-  const containerRef = useRef(null);
   const menuRef = useRef(null);
+  const containerRef = useRef(null);
   const loadedImages = useRef({});
 
   const toggleMenu = () => setMenuOpen((prev) => !prev);
 
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-      localStorage.setItem("theme", newMode ? "dark" : "light");
-      return newMode;
-    });
-  };
-
   useEffect(() => {
+    // Handle clicking outside the menu to close it
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
+    // Preload the current image
     const preloadImage = () => {
       const currentCID = photos[currentIndex].cid;
       if (!loadedImages.current[currentCID]) {
@@ -297,58 +285,49 @@ const Flipbook = () => {
     preloadImage();
   }, [currentIndex, selectedGateway]);
 
-  const goToPrevious = useCallback(() => {
+  useEffect(() => {
+    // Prevent shortcuts like Ctrl+S and PrintScreen
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        alert("Saving images is disabled.");
+      }
+      if (e.key === "PrintScreen") {
+        alert("Screenshots are disabled.");
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const goToPrevious = () => {
     setCurrentIndex((prevIndex) =>
       prevIndex > 0 ? prevIndex - 1 : photos.length - 1
     );
     setIsLoading(true);
     setScale(1);
-  }, []);
+  };
 
-  const goToNext = useCallback(() => {
+  const goToNext = () => {
     setCurrentIndex((prevIndex) =>
       prevIndex < photos.length - 1 ? prevIndex + 1 : 0
     );
     setIsLoading(true);
     setScale(1);
-  }, []);
-
-  const handleKeyDown = useCallback(
-    (event) => {
-      if (event.key === "ArrowLeft") goToPrevious();
-      if (event.key === "ArrowRight") goToNext();
-      if (event.key === "+") setScale((prev) => Math.min(prev + 0.1, 3));
-      if (event.key === "-") setScale((prev) => Math.max(prev - 0.1, 0.5));
-    },
-    [goToPrevious, goToNext]
-  );
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-
-  const handlers = useSwipeable({
-    onSwipedLeft: goToNext,
-    onSwipedRight: goToPrevious,
-    preventDefaultTouchmoveEvent: true,
-    trackMouse: true,
-  });
+  };
 
   return (
     <div
       ref={containerRef}
-      className={`relative flex flex-col h-screen ${
-        darkMode ? "bg-gray-900 text-gray-200" : "bg-gray-100 text-gray-800"
-      } transition-colors duration-300`}
-      {...handlers}
+      className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300 overflow-hidden"
+      onContextMenu={(e) => e.preventDefault()} // Disable right-click
     >
       {/* Menu */}
       <div
         ref={menuRef}
-        className={`fixed top-0 left-0 h-full w-64 ${
-          darkMode ? "bg-black" : "bg-white"
-        } shadow-lg transition-transform ${
+        className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transition-transform ${
           menuOpen ? "translate-x-0" : "-translate-x-64"
         }`}
       >
@@ -358,9 +337,7 @@ const Flipbook = () => {
             <li className="mb-2">
               <Link
                 to="/"
-                className={`${
-                  darkMode ? "text-blue-400" : "text-blue-500"
-                } hover:text-blue-600 transition`}
+                className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
               >
                 Back to Landing Page
               </Link>
@@ -370,23 +347,15 @@ const Flipbook = () => {
       </div>
 
       {/* Header */}
-      <header
-        className={`absolute top-0 left-0 w-full ${
-          darkMode ? "bg-black" : "bg-white"
-        } bg-opacity-80 p-4 flex justify-between items-center z-10`}
-      >
+      <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
         <button
-          className={`${
-            darkMode ? "text-gray-200" : "text-gray-800"
-          } hover:text-gray-400 transition`}
+          className="text-gray-700 dark:text-gray-300"
           onClick={toggleMenu}
           aria-label="Toggle Menu"
         >
           ☰
         </button>
-        <h1 className="text-2xl font-bold tracking-wider">
-          And The World Came Outside
-        </h1>
+        <h1 className="text-2xl font-bold">And The World Came Outside</h1>
       </header>
 
       {/* Main Viewer */}
@@ -404,6 +373,8 @@ const Flipbook = () => {
               isLoading ? "opacity-0" : "opacity-100"
             }`}
             style={{ transform: `scale(${scale})` }}
+            onContextMenu={(e) => e.preventDefault()} // Disable right-click on the image
+            draggable="false" // Disable drag and drop
           />
           <button
             aria-label="Previous Image"
@@ -423,7 +394,7 @@ const Flipbook = () => {
       </main>
 
       {/* Footer */}
-      <footer className={`p-4 ${darkMode ? "bg-black" : "bg-white"} shadow-md`}>
+      <footer className="p-4 bg-white dark:bg-gray-800 shadow-md">
         <div className="flex items-center justify-center space-x-4 overflow-x-auto">
           {photos.map((photo, index) => (
             <button
@@ -443,20 +414,11 @@ const Flipbook = () => {
                 src={`${selectedGateway}${photo.cid}`}
                 alt={photo.name}
                 className="w-full h-full object-cover transform transition-transform duration-300 hover:scale-110 hover:shadow-lg"
+                onContextMenu={(e) => e.preventDefault()} // Disable right-click on thumbnails
+                draggable="false" // Disable drag on thumbnails
               />
             </button>
           ))}
-        </div>
-        {/* Dark Mode Button */}
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={toggleDarkMode}
-            className={`${
-              darkMode ? "bg-yellow-500" : "bg-gray-800"
-            } text-white px-4 py-2 rounded hover:opacity-80 transition`}
-          >
-            {darkMode ? "Light Mode" : "Dark Mode"}
-          </button>
         </div>
       </footer>
     </div>
