@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useSwipeable } from "react-swipeable";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import "/Users/parker/Desktop/atwco-photobook/atwco/src/components/Flipbook.js"; // Add custom styles for ripple effect, fade-in, and flip animations
 
 const photos = [
   {
@@ -247,15 +247,19 @@ const Flipbook = () => {
   const [scale, setScale] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedGateway] = useState(IPFS_GATEWAYS[0].url);
+  const [flipped, setFlipped] = useState(false);
 
   const menuRef = useRef(null);
   const containerRef = useRef(null);
   const loadedImages = useRef({});
 
-  const toggleMenu = () => setMenuOpen((prev) => !prev);
+  const toggleMenu = () => {
+    setMenuOpen((previousState) => {
+      return !previousState;
+    });
+  };
 
   useEffect(() => {
-    // Handle clicking outside the menu to close it
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setMenuOpen(false);
@@ -263,11 +267,12 @@ const Flipbook = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
-    // Preload the current image
     const preloadImage = () => {
       const currentCID = photos[currentIndex].cid;
       if (!loadedImages.current[currentCID]) {
@@ -277,7 +282,10 @@ const Flipbook = () => {
           setIsLoading(false);
           loadedImages.current[currentCID] = true;
         };
-        img.onerror = () => setIsLoading(false);
+        img.onerror = (error) => {
+          console.error("Error loading image:", error);
+          setIsLoading(false);
+        };
       } else {
         setIsLoading(false);
       }
@@ -286,45 +294,91 @@ const Flipbook = () => {
   }, [currentIndex, selectedGateway]);
 
   useEffect(() => {
-    // Prevent shortcuts like Ctrl+S and PrintScreen
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && (e.key === "s" || e.key === "S")) {
-        e.preventDefault();
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && (event.key === "s" || event.key === "S")) {
+        event.preventDefault();
         alert("Saving images is disabled.");
       }
-      if (e.key === "PrintScreen") {
+      if (event.key === "PrintScreen") {
         alert("Screenshots are disabled.");
-        e.preventDefault();
+        event.preventDefault();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex > 0 ? prevIndex - 1 : photos.length - 1
-    );
-    setIsLoading(true);
-    setScale(1);
+    setFlipped(true);
+    setTimeout(() => {
+      setCurrentIndex((previousIndex) => {
+        if (previousIndex > 0) {
+          return previousIndex - 1;
+        } else {
+          return photos.length - 1;
+        }
+      });
+      setIsLoading(true);
+      setScale(1);
+      setFlipped(false);
+    }, 600); // Delay to match flip animation
   };
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex < photos.length - 1 ? prevIndex + 1 : 0
-    );
-    setIsLoading(true);
-    setScale(1);
+    setFlipped(true);
+    setTimeout(() => {
+      setCurrentIndex((previousIndex) => {
+        if (previousIndex < photos.length - 1) {
+          return previousIndex + 1;
+        } else {
+          return 0;
+        }
+      });
+      setIsLoading(true);
+      setScale(1);
+      setFlipped(false);
+    }, 600); // Delay to match flip animation
+  };
+
+  useEffect(() => {
+    const nextIndex = (currentIndex + 1) % photos.length;
+    const prevIndex = (currentIndex - 1 + photos.length) % photos.length;
+    [nextIndex, prevIndex].forEach((index) => {
+      const cid = photos[index].cid;
+      if (!loadedImages.current[cid]) {
+        const img = new Image();
+        img.src = `${selectedGateway}${cid}`;
+        loadedImages.current[cid] = true;
+      }
+    });
+  }, [currentIndex, selectedGateway]);
+
+  const handleRipple = (event) => {
+    const button = event.currentTarget;
+    const circle = document.createElement("span");
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    const radius = diameter / 2;
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
+    circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
+    circle.classList.add("ripple");
+    button.appendChild(circle);
+    setTimeout(() => {
+      circle.remove();
+    }, 600);
   };
 
   return (
     <div
       ref={containerRef}
       className="relative flex flex-col h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300 overflow-hidden"
-      onContextMenu={(e) => e.preventDefault()} // Disable right-click
+      onContextMenu={(event) => {
+        event.preventDefault();
+      }}
     >
-      {/* Menu */}
       <div
         ref={menuRef}
         className={`fixed top-0 left-0 h-full w-64 bg-white dark:bg-gray-800 shadow-lg transition-transform ${
@@ -346,7 +400,6 @@ const Flipbook = () => {
         </div>
       </div>
 
-      {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-md p-4 flex justify-between items-center">
         <button
           className="text-gray-700 dark:text-gray-300"
@@ -358,9 +411,10 @@ const Flipbook = () => {
         <h1 className="text-2xl font-bold">And The World Came Outside</h1>
       </header>
 
-      {/* Main Viewer */}
       <main className="flex-grow flex items-center justify-center p-4 relative z-0">
-        <div className="relative w-full max-w-5xl aspect-[3/2] shadow-lg rounded-lg overflow-hidden">
+        <div
+          className={`relative w-full max-w-5xl aspect-[3/2] shadow-lg rounded-lg overflow-hidden ${flipped ? "flip" : ""}`}
+        >
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-opacity-80 bg-black">
               <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-blue-400"></div>
@@ -370,30 +424,38 @@ const Flipbook = () => {
             src={`${selectedGateway}${photos[currentIndex].cid}`}
             alt={photos[currentIndex].name}
             className={`w-full h-full object-contain transition-opacity duration-500 ${
-              isLoading ? "opacity-0" : "opacity-100"
+              isLoading ? "opacity-0 blur-lg" : "opacity-100 blur-0"
             }`}
             style={{ transform: `scale(${scale})` }}
-            onContextMenu={(e) => e.preventDefault()} // Disable right-click on the image
-            draggable="false" // Disable drag and drop
+            onContextMenu={(event) => {
+              event.preventDefault();
+            }}
+            draggable="false"
+            onLoad={() => setIsLoading(false)}
           />
           <button
             aria-label="Previous Image"
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition"
-            onClick={goToPrevious}
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition ripple-button"
+            onClick={(event) => {
+              handleRipple(event);
+              goToPrevious();
+            }}
           >
-            &#8592;
+            ←
           </button>
           <button
             aria-label="Next Image"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition"
-            onClick={goToNext}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition ripple-button"
+            onClick={(event) => {
+              handleRipple(event);
+              goToNext();
+            }}
           >
-            &#8594;
+            →
           </button>
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="p-4 bg-white dark:bg-gray-800 shadow-md">
         <div className="flex items-center justify-center space-x-4 overflow-x-auto">
           {photos.map((photo, index) => (
@@ -414,8 +476,10 @@ const Flipbook = () => {
                 src={`${selectedGateway}${photo.cid}`}
                 alt={photo.name}
                 className="w-full h-full object-cover transform transition-transform duration-300 hover:scale-110 hover:shadow-lg"
-                onContextMenu={(e) => e.preventDefault()} // Disable right-click on thumbnails
-                draggable="false" // Disable drag on thumbnails
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                }}
+                draggable="false"
               />
             </button>
           ))}
