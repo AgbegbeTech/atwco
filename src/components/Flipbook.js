@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import "/Users/parker/Desktop/atwco-photobook/atwco/src/components/Flipbook.js"; // Add custom styles for ripple effect, fade-in, and flip animations
+import "/Users/parker/Desktop/atwco-photobook/atwco/src/components/Flipbook.css"; // Add custom styles for ripple effect, fade-in, and flip animations
 
 const photos = [
   {
@@ -435,7 +435,7 @@ const Flipbook = () => {
           />
           <button
             aria-label="Previous Image"
-            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition ripple-button"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-4 rounded-full hover:bg-gray-600 transition ripple-button"
             onClick={(event) => {
               handleRipple(event);
               goToPrevious();
@@ -445,7 +445,7 @@ const Flipbook = () => {
           </button>
           <button
             aria-label="Next Image"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-2 rounded-full hover:bg-gray-600 transition ripple-button"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-700 bg-opacity-70 text-white p-4 rounded-full hover:bg-gray-600 transition ripple-button"
             onClick={(event) => {
               handleRipple(event);
               goToNext();

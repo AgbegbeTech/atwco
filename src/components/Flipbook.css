@@ -1,78 +1,242 @@
-/* Flipbook.css */
-
-/* Ripple Effect for Button Clicks */
-.ripple {
-    position: absolute;
-    border-radius: 50%;
-    transform: scale(0);
-    animation: ripple-animation 0.6s linear;
-    background: rgba(255, 255, 255, 0.7);
-    pointer-events: none;
-    z-index: 1;
-}
-
-@keyframes ripple-animation {
-    to {
-        transform: scale(4);
-        opacity: 0;
-    }
-}
-
-.ripple-button {
-    position: relative;
+.flipbook-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f0f0f0;
+    color: #333;
+    transition: background-color 0.3s, color 0.3s;
     overflow: hidden;
 }
 
-/* Fade-in/Fade-out Transition Effects for Images */
-img {
-    transition: opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
+.flipbook-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Blur Effect During Loading */
-.blur-lg {
+.flipbook-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    background-color: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.menu-content {
+    padding: 1rem;
+}
+
+.flipbook-main {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.flipbook-image-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    aspect-ratio: 3/2;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.flipbook-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: opacity 0.5s, filter 0.5s, transform 0.3s;
+}
+
+.flipbook-image.loading {
+    opacity: 0;
     filter: blur(10px);
 }
 
-/* Flip Effect for Images */
-.flip {
-    transform: rotateY(180deg);
-    transition: transform 0.6s;
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
-/* General Styling Adjustments */
-button {
-    outline: none;
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #fff;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.error-message {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #fff;
     border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-button:hover {
-    transform: scale(1.05);
+.nav-button:hover {
+    background-color: rgba(0, 0, 0, 0.7);
 }
 
-/* Light and Dark Mode Adjustments */
-.bg-gray-100 {
-    background-color: #f7fafc;
+.nav-button.prev {
+    left: 10px;
 }
 
-.bg-gray-900 {
-    background-color: #1a202c;
+.nav-button.next {
+    right: 10px;
 }
 
-.text-gray-800 {
-    color: #2d3748;
+.flipbook-footer {
+    padding: 1rem;
+    background-color: #fff;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.text-gray-200 {
-    color: #edf2f7;
+.controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
-/* Menu Transition Effect */
-.menu-open {
-    transition: transform 0.3s ease-in-out;
+.zoom-slider {
+    width: 200px;
 }
 
-/* Button Hover Effects */
-button:hover .ripple {
-    opacity: 1;
+.thumbnail-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+}
+
+.thumbnail {
+    width: 60px;
+    height: 60px;
+    border: none;
+    padding: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.thumbnail:hover {
+    transform: scale(1.1);
+}
+
+.thumbnail.active {
+    box-shadow: 0 0 0 2px #3498db;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 768px) {
+    .flipbook-header h1 {
+        font-size: 1.2rem;
+    }
+
+    .controls {
+        flex-wrap: wrap;
+    }
+
+    .zoom-slider {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+.flip {
+    animation: flip 0.6s ease-out;
+}
+
+@keyframes flip {
+    0% {
+        transform: rotateY(0);
+    }
+
+    50% {
+        transform: rotateY(90deg);
+    }
+
+    100% {
+        transform: rotateY(0);
+    }
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+    .flipbook-container {
+        background-color: #1a1a1a;
+        color: #f0f0f0;
+    }
+
+    .flipbook-header,
+    .flipbook-menu,
+    .flipbook-footer {
+        background-color: #2a2a2a;
+    }
+
+    .nav-button {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-button:hover {
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .thumbnail.active {
+        box-shadow: 0 0 0 2px #61dafb;
+    }
 }
