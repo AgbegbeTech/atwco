@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import "/Users/parker/Desktop/atwco-photobook/atwco/src/components/Flipbook.css"; // Add custom styles for ripple effect, fade-in, and flip animations
+import '../components/Flipbook.css'; // From a parent directory
+; // Add custom styles for ripple effect, fade-in, and flip animations
 
 const photos = [
   {

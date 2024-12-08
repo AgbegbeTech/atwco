@@ -34,7 +34,7 @@
     "workbox-streams": "^6.6.0"
   },
   "scripts": {
-    "vercel-build": "git submodule init && git submodule update && react-scripts build",
+    "vercel-build": "react-scripts build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
